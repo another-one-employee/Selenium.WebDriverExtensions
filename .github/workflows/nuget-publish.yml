@@ -1,0 +1,42 @@
+name: Publish Package
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+      
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      working-directory: src
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        working-directory: ${{env.working-directory}}
+        run: dotnet restore
+
+      - name: Build
+        working-directory: ${{env.working-directory}}
+        run: dotnet build --configuration Release
+
+      - name: Pack
+        working-directory: ${{env.working-directory}}
+        run: dotnet pack --configuration Release --output ./output
+
+      - name: Publish to GitHub Packages
+        working-directory: ${{env.working-directory}}
+        run: >
+          dotnet nuget push ./output/*.nupkg
+          -s https://nuget.pkg.github.com/another-one-employee/index.json
+          -k ${{ secrets.GITHUB_TOKEN }}
